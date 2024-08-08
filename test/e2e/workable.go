@@ -33,8 +33,10 @@ import (
 )
 
 func testWorkable(kwokctlPath, name string) error {
-	currentContext, err := exec.Command("kubectl", "config", "current-context").Output()
+	cmd := exec.Command("kubectl", "config", "current-context")
+	currentContext, err := cmd.Output()
 	if err != nil {
+		fmt.Print("THIS IS THE ERROR:",err)
 		return fmt.Errorf("error getting current context: %v", err)
 	}
 	if strings.TrimSpace(string(currentContext)) != "kwok-"+name {
@@ -51,7 +53,7 @@ func testWorkable(kwokctlPath, name string) error {
 		return fmt.Errorf("failed to scale pod: %v", err)
 	}
 	if err := retry(120, func() error {
-		output, err := exec.Command(kwokctlPath, "--name="+name, "kubectl", "get", "pod").Output()
+		output, err := exec.Command(kwokctlPath, "--name", name, "kubectl", "get", "pod").Output()
 		if err != nil {
 			return err
 		}
@@ -64,7 +66,11 @@ func testWorkable(kwokctlPath, name string) error {
 	}
 
 	kubeconfigPath := name + ".kubeconfig"
-	if err := os.WriteFile(kubeconfigPath, []byte(""), 0644); err != nil {
+	output, err := exec.Command(kwokctlPath, "--name", name, "get", "kubeconfig", "--user", "cluster-admin", "--group", "system:masters").Output()
+	if err != nil {
+		return fmt.Errorf("failed to get kubeconfig: %v", err)
+	}
+	if err := os.WriteFile(kubeconfigPath, output, 0644); err != nil {
 		return fmt.Errorf("failed to write kubeconfig: %v", err)
 	}
 
