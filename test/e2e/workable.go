@@ -36,7 +36,7 @@ func testWorkable(kwokctlPath, name string) error {
 	cmd := exec.Command("kubectl", "config", "current-context")
 	currentContext, err := cmd.Output()
 	if err != nil {
-		fmt.Print("THIS IS THE ERROR:",err)
+		fmt.Print("THIS IS THE ERROR:", err)
 		return fmt.Errorf("error getting current context: %v", err)
 	}
 	if strings.TrimSpace(string(currentContext)) != "kwok-"+name {
@@ -245,7 +245,12 @@ func retry(times int, f func() error) error {
 func CaseWorkable(kwokctlPath, clusterName, clusterRuntime string) *features.FeatureBuilder {
 	return features.New("Workable").
 		Assess("Test Workable", func(ctx context.Context, t *testing.T, c *envconf.Config) context.Context {
-			err := testWorkable(kwokctlPath, clusterName)
+			_, err := exec.CommandContext(ctx, "kubectl", "config", "current-context").Output()
+			if err != nil {
+				fmt.Print("ERRRRRRR")
+				t.Fatal(err)
+			}
+			err = testWorkable(kwokctlPath, clusterName)
 			if err != nil {
 				t.Fatal(err)
 			}
